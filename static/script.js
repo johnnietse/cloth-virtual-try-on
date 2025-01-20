@@ -132,19 +132,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-
-
-
-const uploadResponse = await fetch('/upload', {
-    method: 'POST',
-    body: formData
-});
-if (!uploadResponse.ok) {
-    // Log the response text (may be HTML error page)
-    const errorText = await uploadResponse.text();
-    console.error('Error during upload:', errorText);
-    statusMessage.innerHTML = 'An error occurred while uploading the video. Please try again.';
-    return;
-}
-const data = await uploadResponse.json();
+//
+//
+//
+// const uploadResponse = await fetch('/upload', {
+//     method: 'POST',
+//     body: formData
+// });
+// if (!uploadResponse.ok) {
+//     // Log the response text (may be HTML error page)
+//     const errorText = await uploadResponse.text();
+//     console.error('Error during upload:', errorText);
+//     statusMessage.innerHTML = 'An error occurred while uploading the video. Please try again.';
+//     return;
+// }
+// const data = await uploadResponse.json();
 
