@@ -61,10 +61,10 @@ http://127.0.0.1:5000
 You should see the web app interface where you can upload your clothing image and personal video.
 
 ### 3. Upload Files and Process:
-- Upload your clothing image (make sure the background is removed).
-- Upload your personal video (where you are facing the camera).
+- Upload your **clothing image** (make sure the background is removed).
+- Upload your **personal video** (where you are facing the camera).
 - Select the clothing item you want to try on.
-- Click the "Upload and Process" button to generate the virtual try-on video.
+- Click the **"Upload and Process"** button to generate the virtual try-on video.
   
 ### 4. Download the Processed Video:
 Once the video has been processed, you will see a message:
@@ -73,7 +73,7 @@ Once the video has been processed, you will see a message:
 Video processing complete! Click the link below to download.
 ```
 
-Click on the "Download Processed Video" button to download the generated video.
+Click on the **"Download Processed Video"** button to download the generated video.
 
 ## Future Considerations
 - Deployment to a cloud platform (e.g., Render, Heroku, AWS).
