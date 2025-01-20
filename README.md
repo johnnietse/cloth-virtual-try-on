@@ -12,6 +12,13 @@ This is a web app that allows users to upload an image of their chosen clothing 
 
 To run this project locally, you will need to set up a virtual environment and install the required dependencies. Here's how to do it:
 
+**Before cloning the repository, change your working directory to the folder where you want the project to be saved:**
+
+Navigate to the directory where you want to store the project:
+```bash
+cd /path/to/your/directory
+```
+
 ### 1. Clone the repository:
 ```bash
 git clone https://github.com/johnnietse/cloth-virtual-try-on.git
