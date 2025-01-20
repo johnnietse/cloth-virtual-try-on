@@ -78,9 +78,10 @@ Click on the **"Download Processed Video"** button to download the generated vid
 ## Sample Files
 To get an idea of how the app works, you can look at the following sample files within the repository:
 
-Clothing Images: Sample clothing images can be found in the **Resources/Shirts** folder.
-Uploaded Videos: Sample user videos can be found in the **static/uploads** folder.
-Processed Videos: Sample processed virtual clothing try-on videos are available in the **static/processed** folder.
+- Clothing Images: Sample clothing images can be found in the **Resources/Shirts** folder.
+- Uploaded Videos: Sample user videos can be found in the **static/uploads** folder.
+- Processed Videos: Sample processed virtual clothing try-on videos are available in the **static/processed** folder.
+
 These samples demonstrate the input and output for the app's functionality.
 
 ## Future Considerations
