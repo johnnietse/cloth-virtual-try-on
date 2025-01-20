@@ -14,8 +14,8 @@ To run this project locally, you will need to set up a virtual environment and i
 
 ### 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/<your-username>/cloth-virtual-try-on.git
+cd cloth-virtual-try-on
 ```
 
 ### 2. Set up a virtual environment:
