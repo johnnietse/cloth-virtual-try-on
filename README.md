@@ -95,3 +95,7 @@ These samples demonstrate the input and output for the app's functionality.
 - Deployment to a cloud platform (e.g., Render, Heroku, AWS).
 - Enhancements to virtual clothing fitting (e.g., improved image processing and fit accuracy).
 - Support for multiple clothing items or different video orientations.
+
+
+## 📸 Screenshots 
+![virtual-try-on](https://github.com/user-attachments/assets/abc117df-a0ee-4a15-ac30-6964c31e48e4)
