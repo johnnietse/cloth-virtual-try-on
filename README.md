@@ -97,5 +97,5 @@ These samples demonstrate the input and output for the app's functionality.
 - Support for multiple clothing items or different video orientations.
 
 
-## 📸 Screenshots 
+## 📸 Screenshot
 ![virtual-try-on](https://github.com/user-attachments/assets/abc117df-a0ee-4a15-ac30-6964c31e48e4)
