@@ -7,6 +7,17 @@ import os
 
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return '''
+    <h2>Video Shirt Overlay API</h2>
+    <p>Use a POST request to <code>/upload</code> with form-data:</p>
+    <ul>
+        <li><code>file</code>: the video file</li>
+        <li><code>shirt</code>: the shirt image (with transparency)</li>
+    </ul>
+    '''
+
 def overlay_shirt_on_frame(img, lmList, shirt_img):
     left_shoulder = np.array(lmList[11][1:3])
     right_shoulder = np.array(lmList[12][1:3])
@@ -31,8 +42,7 @@ def overlay_shirt_on_frame(img, lmList, shirt_img):
     matrix = cv2.getPerspectiveTransform(source_pts, target_pts)
     warped_shirt = cv2.warpPerspective(shirt_img, matrix, (img.shape[1], img.shape[0]),
                                        borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
-    img = overlay_transparent(img, warped_shirt)
-    return img
+    return overlay_transparent(img, warped_shirt)
 
 def overlay_transparent(background, overlay, alpha_blend=0.7):
     b, g, r, a = cv2.split(overlay)
