@@ -1,184 +1,185 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, request, render_template, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
-import os
-import cv2
-import cvzone
 from cvzone.PoseModule import PoseDetector
-from datetime import datetime
+import cv2
 import numpy as np
+import os
+import io
+import logging
+from datetime import datetime
 import tempfile
 
+# Initialize Flask app
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
-# Database setup
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///video_metadata.db'
+# Configure PostgreSQL database
+db_uri = os.environ.get(
+    'DATABASE_URL', 
+    'postgresql://conference_db_7rej_user:SfCIq9wras1ApfLgGrQcayRy5igtvG7R@dpg-d03frmadbo4c738bml5g-a.virginia-postgres.render.com/conference_db_7rej'
+)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Configure temporary directories
-UPLOAD_FOLDER = tempfile.mkdtemp()
-PROCESSED_FOLDER = tempfile.mkdtemp()
-SHIRT_FOLDER = "Resources/Shirts"
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
-app.config['SHIRT_FOLDER'] = SHIRT_FOLDER
-
-os.makedirs(SHIRT_FOLDER, exist_ok=True)
-
+# Define database model
 class VideoMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(100), nullable=False)
-    processed_filename = db.Column(db.String(100), nullable=True)
-    status = db.Column(db.String(20), default='Processing')
-    download_url = db.Column(db.String(200), nullable=True)
+    original_filename = db.Column(db.String(255), nullable=False)
+    processed_data = db.Column(db.LargeBinary, nullable=True)
+    shirt_used = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='processing')
 
-    def __repr__(self):
-        return f"<VideoMetadata {self.filename}>"
-
-with app.app_context():
-    db.create_all()
-
-def get_shirt_list():
-    return os.listdir(app.config['SHIRT_FOLDER'])
+# Constants
+SHIRT_FOLDER = os.path.join(os.path.dirname(__file__), 'Resources', 'Shirts')
+app.config['SHIRT_FOLDER'] = SHIRT_FOLDER
+os.makedirs(SHIRT_FOLDER, exist_ok=True)
 
 @app.route('/')
 def index():
-    listShirts = get_shirt_list()
-    videos = VideoMetadata.query.all()
-    return render_template('index.html', shirts=listShirts, videos=videos)
+    shirts = get_available_shirts()
+    videos = VideoMetadata.query.order_by(VideoMetadata.created_at.desc()).all()
+    return render_template('index.html', shirts=shirts, videos=videos)
 
-@app.route('/upload_shirt', methods=['POST'])
-def upload_shirt():
-    if 'shirt_image' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['shirt_image']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if file:
-        filepath = os.path.join(app.config['SHIRT_FOLDER'], file.filename)
-        file.save(filepath)
-        return redirect(url_for('index'))
+def get_available_shirts():
+    try:
+        return [f for f in os.listdir(SHIRT_FOLDER) if f.endswith(('.png', '.jpg', '.jpeg'))]
+    except FileNotFoundError:
+        app.logger.error("Shirt directory not found at %s", SHIRT_FOLDER)
+        return []
 
 @app.route('/upload', methods=['POST'])
-def upload_video():
+def handle_upload():
     try:
+        # Validate inputs
         if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
+            return jsonify({'error': 'No file uploaded'}), 400
+            
         file = request.files['file']
         if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{file.filename}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+            return jsonify({'error': 'Empty filename'}), 400
 
         shirt_index = int(request.form.get('shirt_index', 0))
-        processed_filename = process_video(filepath, filename, shirt_index)
-        processed_url = url_for('download_processed', filename=processed_filename)
+        shirts = get_available_shirts()
+        
+        if not shirts:
+            return jsonify({'error': 'No shirts available'}), 400
+        if shirt_index < 0 or shirt_index >= len(shirts):
+            return jsonify({'error': 'Invalid shirt selection'}), 400
+
+        # Save original file to temporary storage
+        temp_video = tempfile.NamedTemporaryFile(delete=False)
+        file.save(temp_video.name)
+        
+        # Process video
+        shirt_path = os.path.join(SHIRT_FOLDER, shirts[shirt_index])
+        processed_video = process_video(temp_video.name, shirt_path)
+        
+        # Store in database
+        video_entry = VideoMetadata(
+            original_filename=file.filename,
+            processed_data=processed_video,
+            shirt_used=shirts[shirt_index],
+            status='completed'
+        )
+        db.session.add(video_entry)
+        db.session.commit()
+
+        # Cleanup
+        os.unlink(temp_video.name)
 
         return jsonify({
-            "message": "Video processing complete! Click the link below to download.",
-            "download_url": processed_url
+            'message': 'Video processed successfully',
+            'download_url': url_for('download_video', video_id=video_entry.id)
         })
-    
-    except Exception as e:
-        print("Error in /upload route:", e)
-        return jsonify({"error": str(e)}), 500
 
-def process_video(input_path, filename, shirt_index):
+    except Exception as e:
+        app.logger.error("Processing error: %s", str(e))
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+def process_video(input_path, shirt_path):
     detector = PoseDetector()
     cap = cv2.VideoCapture(input_path)
-    if not cap.isOpened():
-        raise ValueError("Could not open video file")
+    shirt_img = cv2.imread(shirt_path, cv2.IMREAD_UNCHANGED)
+    
+    if shirt_img is None:
+        raise ValueError(f"Could not load shirt image: {shirt_path}")
 
-    listShirts = get_shirt_list()
-    if not listShirts:
-        raise ValueError("No shirts available in the Resources/Shirts directory")
-    if shirt_index < 0 or shirt_index >= len(listShirts):
-        raise ValueError("Invalid shirt index")
-
-    shirt_filename = listShirts[shirt_index]
-    shirt_path = os.path.join(app.config['SHIRT_FOLDER'], shirt_filename)
-    imgShirt = cv2.imread(shirt_path, cv2.IMREAD_UNCHANGED)
-    if imgShirt is None:
-        raise ValueError(f"Could not load shirt image: {shirt_filename}")
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    processed_filename = f"processed_{timestamp}_{filename}"
-    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
-
+    # Video writer setup
+    output = io.BytesIO()
+    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(processed_path, fourcc, 30.0, (1280, 720))
+    out = cv2.VideoWriter(
+        temp_output.name, 
+        fourcc, 
+        30.0, 
+        (int(cap.get(3)), int(cap.get(4)))
+    
+    try:
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
 
-    while True:
-        success, img = cap.read()
-        if not success:
-            break
+            frame = detector.findPose(frame)
+            lmList, _ = detector.findPosition(frame, bboxWithHands=False, draw=False)
 
-        img = detector.findPose(img)
-        lmList, _ = detector.findPosition(img, bboxWithHands=False, draw=False)
+            if lmList and len(lmList) > 24:
+                frame = apply_shirt(frame, lmList, shirt_img)
 
-        if lmList and len(lmList) > 24:
-            img = overlay_shirt_on_frame(img, lmList, shirt_filename)
-        
-        out.write(img)
+            out.write(frame)
 
-    cap.release()
-    out.release()
-    return processed_filename
+        out.release()
+        cap.release()
 
-def overlay_shirt_on_frame(img, lmList, shirt_filename):
-    shirt_path = os.path.join(app.config['SHIRT_FOLDER'], shirt_filename)
-    imgShirt = cv2.imread(shirt_path, cv2.IMREAD_UNCHANGED)
-    if imgShirt is None:
-        return img
+        # Read processed video into memory
+        with open(temp_output.name, 'rb') as f:
+            output.write(f.read())
+            
+        return output.getvalue()
 
-    left_shoulder = np.array(lmList[11][1:3])
-    right_shoulder = np.array(lmList[12][1:3])
-    left_hip = np.array(lmList[23][1:3])
-    right_hip = np.array(lmList[24][1:3])
+    finally:
+        if os.path.exists(temp_output.name):
+            os.unlink(temp_output.name)
 
-    height, width = imgShirt.shape[:2]
-    source_pts = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
+def apply_shirt(frame, landmarks, shirt_img):
+    # Shoulder and hip landmarks
+    ls, rs = landmarks[11][1:3], landmarks[12][1:3]
+    lh, rh = landmarks[23][1:3], landmarks[24][1:3]
 
-    center_x = (left_shoulder[0] + right_shoulder[0] + left_hip[0] + right_hip[0]) / 4
-    center_y = (left_shoulder[1] + right_shoulder[1] + left_hip[1] + right_hip[1]) / 4
-    scaling_factor = 1.5
-    shoulder_width = abs(left_shoulder[0] - right_shoulder[0]) * scaling_factor
-    hip_height = abs(left_hip[1] - left_shoulder[1]) * scaling_factor
-    collar_offset = 30
+    # Calculate shirt position
+    shirt_height = int(np.linalg.norm(np.array(ls) - np.array(lh)))
+    shirt_width = int(np.linalg.norm(np.array(ls) - np.array(rs)))
+    
+    # Resize shirt
+    resized_shirt = cv2.resize(shirt_img, (shirt_width, shirt_height))
+    
+    # Position calculation
+    y_offset = int(ls[1] - shirt_height * 0.2)
+    x_offset = int(ls[0] - shirt_width * 0.1)
 
-    target_pts = np.float32([
-        [left_shoulder[0], left_shoulder[1] + collar_offset],
-        [right_shoulder[0], right_shoulder[1] + collar_offset],
-        [right_hip[0], right_hip[1]],
-        [left_hip[0], left_hip[1]]
-    ])
-
-    matrix = cv2.getPerspectiveTransform(source_pts, target_pts)
-    warped_shirt = cv2.warpPerspective(imgShirt, matrix, (img.shape[1], img.shape[0]),
-                                       borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
-
-    return overlay_transparent(img, warped_shirt)
-
-def overlay_transparent(background, overlay, alpha_blend=0.7):
-    if overlay.shape[2] != 4:
-        raise ValueError("Shirt image must have an alpha channel (PNG format)")
-
-    b, g, r, a = cv2.split(overlay)
-    green_mask = (g > 150) & (r < 100) & (b < 100)
-    a[green_mask] = 0
-    alpha = (a / 255.0) * alpha_blend
-
+    # Overlay shirt
+    alpha = resized_shirt[:, :, 3] / 255.0
     for c in range(3):
-        background[:, :, c] = (alpha * overlay[:, :, c] + (1 - alpha) * background[:, :, c])
+        frame[y_offset:y_offset+shirt_height, x_offset:x_offset+shirt_width, c] = \
+            alpha * resized_shirt[:, :, c] + \
+            (1 - alpha) * frame[y_offset:y_offset+shirt_height, x_offset:x_offset+shirt_width, c]
 
-    return background
+    return frame
 
-@app.route('/processed/<filename>')
-def download_processed(filename):
-    return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+@app.route('/download/<int:video_id>')
+def download_video(video_id):
+    video = VideoMetadata.query.get_or_404(video_id)
+    return send_file(
+        io.BytesIO(video.processed_data),
+        mimetype='video/mp4',
+        as_attachment=True,
+        download_name=f"processed_{video.original_filename}"
+    )
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
