@@ -1,79 +1,17 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-import os
+from flask import Flask, request, jsonify, render_template, send_file
 import cv2
-import cvzone
-from cvzone.PoseModule import PoseDetector
-from datetime import datetime
 import numpy as np
-import tempfile
+from cvzone.PoseModule import PoseDetector
+import io
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Base directory for file paths
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
-# Database setup
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///video_metadata.db'  # SQLite URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
-db = SQLAlchemy(app)
-
-# Directories for uploads and processed videos
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')  # Use a relative directory
-PROCESSED_FOLDER = os.path.join(BASE_DIR, 'processed')  # Use a relative directory
-SHIRT_FOLDER = os.path.join(BASE_DIR, 'Resources', 'Shirts')  # Static directory for shirts
-
-# Ensure directories exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROCESSED_FOLDER, exist_ok=True)
-os.makedirs(SHIRT_FOLDER, exist_ok=True)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
-app.config['SHIRT_FOLDER'] = SHIRT_FOLDER
-
-# Limit upload size to prevent huge files
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB limit
-
-# Define the VideoMetadata model
-class VideoMetadata(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # Auto-incrementing ID
-    filename = db.Column(db.String(100), nullable=False)  # Original filename
-    processed_filename = db.Column(db.String(100), nullable=True)  # Processed filename
-    status = db.Column(db.String(20), default='Processing')  # Video status
-    download_url = db.Column(db.String(200), nullable=True)  # URL to download the processed video
-
-    def __repr__(self):
-        return f"<VideoMetadata {self.filename}>"
-
-# Create the database (run once to create the table)
-with app.app_context():
-    db.create_all()
-
-def get_shirt_list():
-    """Fetch the list of shirt images dynamically from the directory."""
-    return os.listdir(app.config['SHIRT_FOLDER'])
-
+# In-memory video processing (no file storage)
 @app.route('/')
 def index():
-    """Render the index page with a list of uploaded videos and shirts."""
-    listShirts = get_shirt_list()
-    videos = VideoMetadata.query.all()  # Fetch all video metadata
-    return render_template('index.html', shirts=listShirts, videos=videos)
-
-@app.route('/upload_shirt', methods=['POST'])
-def upload_shirt():
-    """Upload a shirt image to the 'Shirts' directory."""
-    if 'shirt_image' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['shirt_image']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if file:
-        # Temporarily save the uploaded shirt to the SHIRT_FOLDER directory
-        filepath = os.path.join(app.config['SHIRT_FOLDER'], file.filename)
-        file.save(filepath)
-        return redirect(url_for('index'))  # Redirect back to the home page to display the updated list
+    """Render the homepage."""
+    return render_template('index.html')  # This assumes a basic HTML frontend exists for uploading.
 
 @app.route('/upload', methods=['POST'])
 def upload_video():
@@ -84,137 +22,74 @@ def upload_video():
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
 
-        # Save video
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{file.filename}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        # Read video from the uploaded file (in memory)
+        file_bytes = file.read()
+        video_stream = io.BytesIO(file_bytes)
+        cap = cv2.VideoCapture(video_stream)
 
-        # Shirt index
-        shirt_index = int(request.form.get('shirt_index', 0))
-        processed_filepath = process_video(filepath, filename, shirt_index)
-        processed_url = f"/{processed_filepath}"
+        if not cap.isOpened():
+            return jsonify({"error": "Unable to open video"}), 400
 
-        return jsonify({
-            "message": "Video processing complete! Click the link below to download.",
-            "download_url": processed_url
-        })
-    
+        # Process the video (e.g., apply PoseDetector)
+        detector = PoseDetector()
+        processed_video_frames = []
+
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+
+            # Detect pose and overlay shirt (you can add your shirt overlay code here)
+            frame = detector.findPose(frame)
+            lmList, _ = detector.findPosition(frame, bboxWithHands=False, draw=False)
+
+            # If detected pose keypoints, overlay the shirt (or do further processing)
+            if lmList and len(lmList) > 24:
+                frame = overlay_shirt_on_frame(frame, lmList)  # Assuming overlay_shirt_on_frame is defined as before.
+
+            processed_video_frames.append(frame)
+
+        cap.release()
+
+        # Encode frames into a video (in memory)
+        output_video_stream = io.BytesIO()
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out_writer = cv2.VideoWriter(output_video_stream, fourcc, 30.0, (1280, 720))
+
+        for frame in processed_video_frames:
+            out_writer.write(frame)
+
+        out_writer.release()
+
+        # Seek to the beginning of the in-memory video stream for download
+        output_video_stream.seek(0)
+
+        return send_file(output_video_stream, mimetype='video/mp4', as_attachment=True, download_name="processed_video.mp4")
+
     except Exception as e:
         print("Error in /upload route:", e)
         return jsonify({"error": str(e)}), 500
 
-def process_video(input_path, filename, shirt_index):
-    """Process the uploaded video and overlay the selected shirt."""
-    detector = PoseDetector()
-    cap = cv2.VideoCapture(input_path)
-
-    # Generate a unique filename for the processed video
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    processed_filename = f"processed_{timestamp}_{filename}"
-
-    # Use tempfile for the processed video output
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as out:
-        processed_path = out.name
-
-        # Video writer to save the output
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out_writer = cv2.VideoWriter(processed_path, fourcc, 30.0, (1280, 720))
-
-        listShirts = get_shirt_list()  # Dynamically fetch the list of shirts
-        while True:
-            success, img = cap.read()
-            if not success:
-                break
-
-            img = detector.findPose(img)
-            lmList, bboxInfo = detector.findPosition(img, bboxWithHands=False, draw=False)
-
-            # Check if valid keypoints are detected
-            if lmList and len(lmList) > 24:
-                # Process the frame as before
-                img = overlay_shirt_on_frame(img, lmList, listShirts[shirt_index])
-
-            out_writer.write(img)  # Write frame to video
-
-        cap.release()
-        out_writer.release()
-    return f"{PROCESSED_FOLDER}/{processed_filename}"
-
-def overlay_shirt_on_frame(img, lmList, shirt_filename):
-    # This function overlays the shirt on the frame
-    # Use the code from your existing `process_video` function
-    # and return the modified image.
+def overlay_shirt_on_frame(frame, lmList):
+    """Overlay shirt on the frame based on detected pose landmarks."""
+    # Example of overlay logic (your overlay logic should be here)
     left_shoulder = np.array(lmList[11][1:3])
     right_shoulder = np.array(lmList[12][1:3])
-    left_hip = np.array(lmList[23][1:3])
-    right_hip = np.array(lmList[24][1:3])
 
-    # Load the shirt image
-    imgShirt = cv2.imread(os.path.join(app.config['SHIRT_FOLDER'], shirt_filename), cv2.IMREAD_UNCHANGED)
+    # Load the shirt image and overlay it
+    # You can modify this based on your actual shirt overlay logic
+    shirt = cv2.imread('shirt_image.png', cv2.IMREAD_UNCHANGED)
+    shirt_resized = cv2.resize(shirt, (100, 100))  # Resize for the demonstration
 
-    # Define the source quadrilateral (full shirt image)
-    height, width = imgShirt.shape[:2]
-    source_pts = np.float32([
-        [0, 0],  # Top-left corner
-        [width, 0],  # Top-right corner
-        [width, height],  # Bottom-right corner
-        [0, height]  # Bottom-left corner
-    ])
+    # Assuming you're positioning the shirt based on the shoulders
+    shirt_position = (int((left_shoulder[0] + right_shoulder[0]) / 2), int((left_shoulder[1] + right_shoulder[1]) / 2))
 
-    # Define the target quadrilateral (expanded bounding box with collar adjustment)
-    center_x = (left_shoulder[0] + right_shoulder[0] + left_hip[0] + right_hip[0]) / 4
-    center_y = (left_shoulder[1] + right_shoulder[1] + left_hip[1] + right_hip[1]) / 4
-    scaling_factor = 1.5  # Adjust this value to increase/decrease the box size
+    # Overlay shirt on frame logic
+    x, y = shirt_position
+    h, w, _ = shirt_resized.shape
+    frame[y:y+h, x:x+w] = cv2.addWeighted(frame[y:y+h, x:x+w], 0.7, shirt_resized, 0.3, 0)
 
-    shoulder_width = abs(left_shoulder[0] - right_shoulder[0]) * scaling_factor
-    hip_height = abs(left_hip[1] - left_shoulder[1]) * scaling_factor
-
-    collar_offset = 30  # Adjust this value to move the collar down
-    target_pts = np.float32([
-        [left_shoulder[0], left_shoulder[1] + collar_offset],  # Top-left corner (lower collar)
-        [right_shoulder[0], right_shoulder[1] + collar_offset],  # Top-right corner (lower collar)
-        [right_hip[0], right_hip[1]],  # Bottom-right corner
-        [left_hip[0], left_hip[1]]  # Bottom-left corner
-    ])
-
-    # Compute the perspective transform matrix
-    matrix = cv2.getPerspectiveTransform(source_pts, target_pts)
-
-    # Warp the shirt image to fit the expanded bounding box
-    warped_shirt = cv2.warpPerspective(imgShirt, matrix, (img.shape[1], img.shape[0]),
-                                       borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
-
-    # Overlay the warped shirt on the frame
-    img = overlay_transparent(img, warped_shirt)
-
-    return img
-
-def overlay_transparent(background, overlay, alpha_blend=0.7):
-    """
-    Overlay a transparent image (shirt) onto a background.
-    Remove the green filter while keeping the shirt semi-transparent.
-    """
-    # Split the overlay into color channels and the alpha channel
-    b, g, r, a = cv2.split(overlay)
-
-    # Detect green areas (e.g., green filter regions)
-    green_mask = (g > 150) & (r < 100) & (b < 100)  # Adjust thresholds if needed
-    a[green_mask] = 0  # Set alpha to 0 for green regions (fully transparent)
-
-    # Adjust the alpha channel for semi-transparency of the entire shirt
-    alpha = (a / 255.0) * alpha_blend
-
-    # Blend the overlay with the background
-    for c in range(3):  # Iterate over B, G, R channels
-        background[:, :, c] = (alpha * overlay[:, :, c] + (1 - alpha) * background[:, :, c])
-
-    return background
-
-@app.route('/<path:filepath>')
-def download_file(filepath):
-    return send_from_directory('.', filepath)
+    return frame
 
 if __name__ == '__main__':
-    # Make sure the app works on Render or any host
     app.run(debug=False, host='0.0.0.0')
