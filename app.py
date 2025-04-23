@@ -1,95 +1,103 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, send_file
 import cv2
 import numpy as np
 from cvzone.PoseModule import PoseDetector
-import io
-from datetime import datetime
+import tempfile
+import os
 
 app = Flask(__name__)
 
-# In-memory video processing (no file storage)
-@app.route('/')
-def index():
-    """Render the homepage."""
-    return render_template('index.html')  # This assumes a basic HTML frontend exists for uploading.
+def overlay_shirt_on_frame(img, lmList, shirt_img):
+    left_shoulder = np.array(lmList[11][1:3])
+    right_shoulder = np.array(lmList[12][1:3])
+    left_hip = np.array(lmList[23][1:3])
+    right_hip = np.array(lmList[24][1:3])
+
+    source_pts = np.float32([
+        [0, 0],
+        [shirt_img.shape[1], 0],
+        [shirt_img.shape[1], shirt_img.shape[0]],
+        [0, shirt_img.shape[0]]
+    ])
+
+    collar_offset = 30
+    target_pts = np.float32([
+        [left_shoulder[0], left_shoulder[1] + collar_offset],
+        [right_shoulder[0], right_shoulder[1] + collar_offset],
+        [right_hip[0], right_hip[1]],
+        [left_hip[0], left_hip[1]]
+    ])
+
+    matrix = cv2.getPerspectiveTransform(source_pts, target_pts)
+    warped_shirt = cv2.warpPerspective(shirt_img, matrix, (img.shape[1], img.shape[0]),
+                                       borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+    img = overlay_transparent(img, warped_shirt)
+    return img
+
+def overlay_transparent(background, overlay, alpha_blend=0.7):
+    b, g, r, a = cv2.split(overlay)
+    green_mask = (g > 150) & (r < 100) & (b < 100)
+    a[green_mask] = 0
+    alpha = (a / 255.0) * alpha_blend
+    for c in range(3):
+        background[:, :, c] = (alpha * overlay[:, :, c] + (1 - alpha) * background[:, :, c])
+    return background
 
 @app.route('/upload', methods=['POST'])
 def upload_video():
     try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
+        if 'file' not in request.files or 'shirt' not in request.files:
+            return jsonify({"error": "Missing video or shirt file"}), 400
 
-        # Read video from the uploaded file (in memory)
-        file_bytes = file.read()
-        video_stream = io.BytesIO(file_bytes)
-        cap = cv2.VideoCapture(video_stream)
+        video_file = request.files['file']
+        shirt_file = request.files['shirt']
 
+        if video_file.filename == '' or shirt_file.filename == '':
+            return jsonify({"error": "Missing file name"}), 400
+
+        video_bytes = video_file.read()
+        shirt_bytes = np.frombuffer(shirt_file.read(), np.uint8)
+        shirt_image = cv2.imdecode(shirt_bytes, cv2.IMREAD_UNCHANGED)
+
+        temp_video_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
+        with open(temp_video_path, 'wb') as f:
+            f.write(video_bytes)
+
+        cap = cv2.VideoCapture(temp_video_path)
         if not cap.isOpened():
-            return jsonify({"error": "Unable to open video"}), 400
+            return jsonify({"error": "Could not open video"}), 400
 
-        # Process the video (e.g., apply PoseDetector)
         detector = PoseDetector()
-        processed_video_frames = []
+        processed_frames = []
 
         while True:
             success, frame = cap.read()
             if not success:
                 break
 
-            # Detect pose and overlay shirt (you can add your shirt overlay code here)
             frame = detector.findPose(frame)
             lmList, _ = detector.findPosition(frame, bboxWithHands=False, draw=False)
-
-            # If detected pose keypoints, overlay the shirt (or do further processing)
             if lmList and len(lmList) > 24:
-                frame = overlay_shirt_on_frame(frame, lmList)  # Assuming overlay_shirt_on_frame is defined as before.
+                frame = overlay_shirt_on_frame(frame, lmList, shirt_image)
 
-            processed_video_frames.append(frame)
+            processed_frames.append(frame)
 
         cap.release()
 
-        # Encode frames into a video (in memory)
-        output_video_stream = io.BytesIO()
+        height, width = processed_frames[0].shape[:2]
+        temp_output = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out_writer = cv2.VideoWriter(output_video_stream, fourcc, 30.0, (1280, 720))
+        out_writer = cv2.VideoWriter(temp_output, fourcc, 30.0, (width, height))
 
-        for frame in processed_video_frames:
-            out_writer.write(frame)
-
+        for f in processed_frames:
+            out_writer.write(f)
         out_writer.release()
 
-        # Seek to the beginning of the in-memory video stream for download
-        output_video_stream.seek(0)
-
-        return send_file(output_video_stream, mimetype='video/mp4', as_attachment=True, download_name="processed_video.mp4")
+        return send_file(temp_output, mimetype='video/mp4', as_attachment=True, download_name="processed.mp4")
 
     except Exception as e:
-        print("Error in /upload route:", e)
+        print("Processing error:", e)
         return jsonify({"error": str(e)}), 500
 
-def overlay_shirt_on_frame(frame, lmList):
-    """Overlay shirt on the frame based on detected pose landmarks."""
-    # Example of overlay logic (your overlay logic should be here)
-    left_shoulder = np.array(lmList[11][1:3])
-    right_shoulder = np.array(lmList[12][1:3])
-
-    # Load the shirt image and overlay it
-    # You can modify this based on your actual shirt overlay logic
-    shirt = cv2.imread('shirt_image.png', cv2.IMREAD_UNCHANGED)
-    shirt_resized = cv2.resize(shirt, (100, 100))  # Resize for the demonstration
-
-    # Assuming you're positioning the shirt based on the shoulders
-    shirt_position = (int((left_shoulder[0] + right_shoulder[0]) / 2), int((left_shoulder[1] + right_shoulder[1]) / 2))
-
-    # Overlay shirt on frame logic
-    x, y = shirt_position
-    h, w, _ = shirt_resized.shape
-    frame[y:y+h, x:x+w] = cv2.addWeighted(frame[y:y+h, x:x+w], 0.7, shirt_resized, 0.3, 0)
-
-    return frame
-
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True)
