@@ -32,6 +32,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['SHIRT_FOLDER'] = SHIRT_FOLDER
 
+# Limit upload size to prevent huge files
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB limit
+
 # Define the VideoMetadata model
 class VideoMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)  # Auto-incrementing ID
@@ -213,4 +216,5 @@ def download_file(filepath):
     return send_from_directory('.', filepath)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Make sure the app works on Render or any host
+    app.run(debug=False, host='0.0.0.0')
