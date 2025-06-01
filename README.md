@@ -168,3 +168,10 @@ These samples demonstrate the input and output for the app's functionality.
 
 This revised technical overview reflects the current codebase’s focus on filesystem-based storage, advanced perspective warping, and dynamic clothing management. 
 
+---
+
+## 🎥 Demo Video
+A short walkthrough of the application is available below.
+
+▶️ Watch the full demo here:
+https://youtu.be/Xz_QCwU1M5I
