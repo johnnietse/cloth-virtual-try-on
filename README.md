@@ -1,4 +1,4 @@
-# Virtual Clothing Try-On Web App
+# Virtual Clothing Try-On Web App (Video Version)
 
 This is a web app that allows users to upload an image of their chosen clothing (with the background removed) and a video of themselves (one person, facing the camera) to virtually try on the clothing. After uploading the necessary files and selecting the desired clothing, users can generate a video where the selected clothing is applied to their image.
 
