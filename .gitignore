@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+.env.*
+
+# Editor and IDE files
+.idea/
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and local output
+*.log
+*.sqlite3
+*.db
+
+# Flask/Streamlit specific
+instance/
+*.pid
+
+# Cache / build artifacts
+*.egg-info/
+.eggs/
+dist/
+build/
+
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode settings
+.vscode/
+
+# Test coverage reports
+htmlcov/
+.coverage
+.cache
+
+# PyInstaller
+*.spec
+
+# If you're using a secrets config
+secrets.json
+config.yaml
