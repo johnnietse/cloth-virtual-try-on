@@ -98,8 +98,9 @@ These samples demonstrate the input and output for the app's functionality.
 
 ---
 
-## 📸 Screenshot
-![virtual-try-on](https://github.com/user-attachments/assets/abc117df-a0ee-4a15-ac30-6964c31e48e4)
+## 📸 Screenshots
+![Screenshot (4065)](https://github.com/user-attachments/assets/63af3ca5-816d-4e2f-b086-915155f5db1f)
+![Screenshot (4066)](https://github.com/user-attachments/assets/bffa13b7-8abc-4c25-87dc-f4ecfc1df3e1)
 
 ---
 
