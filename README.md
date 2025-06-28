@@ -182,4 +182,4 @@ https://youtu.be/Xz_QCwU1M5I
 We are excited to announce that image support is now available in a separate repository! You can now process full-movement sequences where users upload static images of themselves instead of videos.
 
 Access the image processing version here:
-👉 Virtual Clothing Try-On (Image Version) -> https://github.com/johnnietse/virtual-try-on.git
+👉 Virtual Clothing Try-On Web App (Image Version) -> https://github.com/johnnietse/cloth-try-on.git
