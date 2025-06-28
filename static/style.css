@@ -1,0 +1,104 @@
+/* General Body Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+}
+
+/* Container for the entire page */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+
+/* Header Styles */
+h1 {
+    color: #4a4a4a;
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+/* File Upload Styles */
+.upload-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.upload-container input[type="file"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.upload-container button {
+    padding: 12px 24px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.upload-container button:hover {
+    background-color: #0056b3;
+}
+
+/* Output Section */
+.output-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.output-container p {
+    font-size: 18px;
+    color: #333;
+}
+
+/* Button Container for Shirt Selection */
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    width: 80%;
+    max-width: 600px;
+}
+
+.button-container img {
+    width: 50px;
+    cursor: pointer;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+    .upload-container, .output-container {
+        width: 90%;
+    }
+
+    .button-container {
+        flex-direction: column;
+    }
+
+    .button-container img {
+        margin-bottom: 10px;
+    }
+}
