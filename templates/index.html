@@ -3,829 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Try-On | Fashion Experience</title>
+    <title>Virtual Try-On</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <style>
-        :root {
-            --primary: #6a5af9;
-            --primary-dark: #5b4af0;
-            --secondary: #ff7c7c;
-            --dark: #121826;
-            --dark-card: #1e2739;
-            --light: #f8f9fa;
-            --light-card: #ffffff;
-            --text-dark: #e2e8f0;
-            --text-light: #334155;
-            --success: #10b981;
-            --transition: all 0.3s ease;
-            
-            /* New variables for file upload area */
-            --file-upload-bg: rgba(255, 255, 255, 0.05);
-            --file-upload-border: rgba(255, 255, 255, 0.15);
-            --file-upload-icon: rgba(255, 255, 255, 0.3);
-            --file-upload-text: rgba(255, 255, 255, 0.7);
-            --file-upload-subtext: rgba(255, 255, 255, 0.5);
-            --design-heading: var(--text-dark);
-            --design-subheading: rgba(255, 255, 255, 0.7);
-        }
-
-        /* Light mode overrides */
-        body.light {
-            --file-upload-bg: rgba(106, 90, 249, 0.05);
-            --file-upload-border: rgba(106, 90, 249, 0.2);
-            --file-upload-icon: rgba(106, 90, 249, 0.3);
-            --file-upload-text: #5a4af4;
-            --file-upload-subtext: rgba(90, 74, 244, 0.7);
-            --design-heading: var(--primary);
-            --design-subheading: rgba(90, 74, 244, 0.8);
-        }
-
-        /* Base Styles */
+        /* General Body Styles */
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--dark);
-            color: var(--text-dark);
-            line-height: 1.6;
-            overflow-x: hidden;
+            background-color: #121212; /* Black background */
+            font-family: 'Arial', sans-serif;
+            color: #f0f0f0; /* Light gray text for readability */
         }
 
-        body.light {
-            background-color: var(--light);
-            color: var(--text-light);
-        }
-
-        body.light .card {
-            background-color: var(--light-card);
-        }
-
-        body.light .form-label,
-        body.light .card-title,
-        body.light .text-muted {
-            color: var(--text-light) !important;
-        }
-
-        body.light .btn-outline-light {
-            border-color: var(--text-light);
-            color: var(--text-light);
-        }
-
-        body.light .btn-outline-light:hover {
-            background-color: var(--text-light);
-            color: var(--light);
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-        }
-
-        /* Navigation */
+        /* Navbar Styles */
         .navbar {
-            background: linear-gradient(135deg, #121826 0%, #1a2238 100%);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            padding: 1rem 0;
+            background-color: #1e1e1e; /* Darker black */
+            border-bottom: 1px solid #333333; /* Subtle border for separation */
         }
-
-        body.light .navbar {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-
         .navbar-brand {
-            font-weight: 800;
-            font-size: 1.8rem;
-            letter-spacing: -0.5px;
-            color: #fff;
+            color: #ffffff !important; /* Pure white text */
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .navbar a {
+            color: #b0b0b0 !important; /* Light gray for links */
+        }
+        .navbar a:hover {
+            color: #ffffff !important; /* White hover effect */
+        }
+        .form-label, .mt-4{
+            color: white;
         }
 
-        body.light .navbar-brand {
-            color: var(--primary);
-        }
-
-        .navbar-brand span {
-            color: var(--secondary);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 5rem 0 3rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(106,90,249,0.1) 0%, rgba(18,24,38,0) 70%);
-            z-index: -1;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(45deg, #6a5af9, #ff7c7c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.2;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            max-width: 700px;
-            margin: 0 auto 2rem;
-            opacity: 0.9;
-        }
-
-        body.light .hero::before {
-            background: radial-gradient(circle, rgba(106,90,249,0.05) 0%, rgba(248,249,250,0) 70%);
-        }
-
-        /* Cards */
+        /* Card Styling */
         .card {
-            border-radius: 16px;
             border: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            background-color: var(--dark-card);
-            transition: var(--transition);
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            font-weight: 600;
-            padding: 1.25rem 1.5rem;
-            border-bottom: none;
-        }
-
-        .card-body {
-            padding: 2rem;
-        }
-
-        /* Form Elements */
-        .form-control {
-            background-color: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text-dark);
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            transition: var(--transition);
-        }
-
-        body.light .form-control {
-            background-color: rgba(248, 249, 250, 0.8);
-            border: 1px solid #dee2e6;
-            color: var(--text-light);
-        }
-
-        .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.12);
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.25rem rgba(106, 90, 249, 0.25);
-            color: white;
-        }
-
-        body.light .form-control:focus {
-            background-color: white;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.25rem rgba(106, 90, 249, 0.25);
-            color: var(--text-light);
-        }
-
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-
-        /* Buttons */
-        .btn {
-            border-radius: 12px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: var(--transition);
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border: none;
-            box-shadow: 0 4px 15px rgba(106, 90, 249, 0.3);
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, #4d3fea 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px rgba(106, 90, 249, 0.4);
-        }
-
-        .btn-lg {
-            padding: 0.9rem 2rem;
-            font-size: 1.1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Subtle shadow */
+            background: #1e1e1e; /* Darker black for cards */
         }
 
         /* Shirt Selection */
-        .shirt-selection {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .shirt-item {
-            position: relative;
+        .shirt-selection img {
+            border: 2px solid transparent;
+            border-radius: 10px;
             cursor: pointer;
-            transition: var(--transition);
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 3/4;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
-
-        .shirt-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: var(--transition);
-        }
-
-        .shirt-item .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(106, 90, 249, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .shirt-item:hover img {
+        .shirt-selection img:hover {
             transform: scale(1.05);
+            border-color: #ffffff; /* Highlight with white border */
+            box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.5); /* White glow */
+        }
+        .shirt-selection img.selected {
+            border-color: #ffffff; /* Highlight the selected shirt */
+            box-shadow: 0px 0px 10px #ffffff;
         }
 
-        .shirt-item:hover .overlay {
-            opacity: 1;
+        /* Buttons */
+        .btn-primary {
+            background-color: #333333; /* Dark gray for buttons */
+            border: none;
+            color: #ffffff; /* White text */
+        }
+        .btn-primary:hover {
+            background-color: #444444; /* Slightly lighter gray on hover */
         }
 
-        .shirt-item.selected {
-            box-shadow: 0 0 0 3px var(--primary), 0 0 20px rgba(106, 90, 249, 0.5);
-        }
-
-        .shirt-item.selected .overlay {
-            opacity: 1;
-        }
-
-        /* Processing Section */
-        .processing-section {
+        /* Processing Message */
+        .processing-message {
+            display: none;
             text-align: center;
-            padding: 3rem 0;
+            font-size: 1.5em;
+            color: #ffffff; /* White for visibility */
+            font-weight: bold;
+            margin-top: 20px;
         }
 
+        /* Spinner */
         .spinner-border {
-            width: 4rem;
-            height: 4rem;
-            border-width: 0.2em;
+            width: 3rem;
+            height: 3rem;
+            color: #ffffff; /* White spinner */
         }
 
         /* Notification */
-        .notification-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--success);
-            text-align: center;
-            padding: 1.5rem;
-            border-radius: 12px;
-            display: none;
-        }
-
-        body.light .notification-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+        .notification {
+            color: #52b788; /* Soft green for success */
         }
 
         /* Footer */
-        .footer {
-            background: linear-gradient(135deg, #121826 0%, #1a2238 100%);
-            padding: 3rem 0 2rem;
-            margin-top: 4rem;
-        }
-
-        body.light .footer {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-
-        .footer h5 {
-            color: white;
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-        }
-
-        body.light .footer h5 {
-            color: var(--dark);
-        }
-
-        .social-links a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 50%;
-            margin-right: 10px;
-            transition: var(--transition);
-        }
-
-        body.light .social-links a {
-            background: rgba(106, 90, 249, 0.1);
-            color: var(--primary);
-        }
-
-        .social-links a:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-3px);
-        }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 1.5rem;
-            margin-top: 2rem;
+        footer {
+            background-color: #1e1e1e; /* Dark footer */
+            color: #b0b0b0; /* Light gray for text */
             text-align: center;
-            color: rgba(255, 255, 255, 0.6);
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #b0b0b0;
+            margin: 0 10px;
+            font-size: 1.2rem;
+        }
+        footer a:hover {
+            color: #ffffff; /* White hover effect */
         }
 
-        body.light .footer-bottom {
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            color: rgba(0, 0, 0, 0.6);
+
+
+        /* Light Theme */
+        body.light {
+            background-color: #ffffff;
+            color: #121212; /* Dark text for readability */
         }
 
-        /* Theme Switcher */
-        .theme-switcher {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            transition: var(--transition);
-            border: none;
+        body.light .navbar {
+            background-color: #f8f9fa; /* Light navbar */
+            border-bottom: 1px solid #dee2e6; /* Subtle border */
         }
 
-        .theme-switcher:hover {
-            background: var(--primary);
-            transform: rotate(15deg);
+        body.light .navbar-brand,
+        body.light .navbar a {
+            color: #121212 !important;
+        }
+        body.light .navbar a:hover {
+            color: #007bff !important; /* Blue hover effect */
         }
 
-        body.light .theme-switcher {
-            background: rgba(106, 90, 249, 0.1);
-            color: var(--primary);
+        body.light .card {
+            background: #f8f9fa; /* Light card */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Lighter shadow */
         }
 
-        /* Enhanced File Upload Area */
-        .file-upload-area {
-            padding: 2.5rem 1rem;
-            text-align: center;
-            border-radius: 12px;
-            background: var(--file-upload-bg);
-            border: 2px dashed var(--file-upload-border);
-            transition: var(--transition);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
+        body.light .form-label {
+            color: #121212; /* Dark text */
         }
 
-        .file-upload-area:hover {
-            border-color: var(--primary);
-            background: rgba(106, 90, 249, 0.08);
+        body.light .btn-primary {
+            background-color: #007bff; /* Blue button */
+            color: #ffffff;
+        }
+        body.light .btn-primary:hover {
+            background-color: #0056b3; /* Darker blue on hover */
         }
 
-        .file-upload-area i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--file-upload-icon);
-            transition: var(--transition);
+        body.light footer {
+            background-color: #f8f9fa; /* Light footer */
+            color: #121212;
+        }
+        body.light footer a {
+            color: #007bff;
+        }
+        body.light footer a:hover {
+            color: #0056b3;
         }
 
-        .file-upload-area:hover i {
-            color: var(--primary);
-            transform: translateY(-5px);
+        /* Light Theme Sun Icon */
+        body.light #themeSwitcher {
+            border: 2px solid #333;  /* Dark border for sun icon */
+            background-color: #444;  /* Dark background */
         }
 
-        .file-upload-area h4 {
-            margin-bottom: 0.5rem;
-            color: var(--file-upload-text);
-            font-weight: 600;
+        body.light #themeSwitcher i {
+            color: #ffffff;  /* White color for the sun icon */
         }
 
-        .file-upload-area p {
-            color: var(--file-upload-subtext);
-            margin-bottom: 0;
-            font-size: 0.95rem;
+        /* Light Theme Shirt Image Hover Effect */
+        body.light .shirt-selection img:hover {
+            border-color: #444;  /* Darker border on hover */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);  /* Darker shadow effect */
         }
 
-        .file-upload-area input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        /* Light Theme Selected Shirt Image */
+        body.light .shirt-selection img.selected {
+            border-color: #444;  /* Darker border when selected */
+            box-shadow: 0px 0px 10px #444;  /* Dark shadow effect */
         }
 
-        /* Design Selection Header */
-        .design-header h4 {
-            color: var(--design-heading);
-            margin-bottom: 0.5rem;
-        }
-
-        .design-header p {
-            color: var(--design-subheading);
-            margin-bottom: 1.5rem;
-        }
-
-        /* Custom File Input Button */
-        .custom-file-button {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background: rgba(106, 90, 249, 0.1);
-            color: var(--primary);
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            border: 1px solid rgba(106, 90, 249, 0.2);
-            margin-top: 1rem;
-        }
-
-        body.dark .custom-file-button {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .custom-file-button:hover {
-            background: rgba(106, 90, 249, 0.2);
-            transform: translateY(-2px);
-        }
-
-        body.dark .custom-file-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* File Input Container */
-        .file-input-container {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-container input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero p {
-                font-size: 1.1rem;
-            }
-            
-            .card-body {
-                padding: 1.5rem;
-            }
-            
-            .shirt-selection {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 1rem;
-            }
-        }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-tshirt me-2"></i>Virtual<span>Fit</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <button class="theme-switcher me-3" id="themeSwitcher">
-                    <i class="fas fa-moon"></i>
-                </button>
+            <a class="navbar-brand" href="#">Virtual Try-On</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                   <!-- Theme Switcher Icon -->
+                    <button id="themeSwitcher" class="btn btn-outline-light ms-3">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </ul>
+
+
+
+
+
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <h1>Experience Fashion in a Whole New Way</h1>
-                    <p class="lead">Upload your design, try it on virtually, and see how it looks before you buy. Our AI-powered technology creates a realistic try-on experience in seconds.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Main Content -->
-    <main class="container">
-        <div class="row g-5">
-            <!-- Upload Shirt Card -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-plus-circle me-2"></i>Add New Design
-                    </div>
-                    <div class="card-body">
-                        <form action="/upload_shirt" method="POST" enctype="multipart/form-data">
-                            <div class="mb-4">
-                                <label for="shirt_image" class="form-label">Upload Your Shirt Design</label>
-                                <div class="file-upload-area">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <h4>Drag & drop your design here</h4>
-                                    <p>or click to browse</p>
-                                    <input type="file" name="shirt_image" id="shirt_image" required>
-                                </div>
-                                <div class="file-input-container mt-3">
-                                    <div class="custom-file-button">
-                                        <i class="fas fa-folder-open me-2"></i>Choose a File
-                                    </div>
-                                    <input type="file" name="shirt_image" id="shirt_image_alt" required>
-                                </div>
-                            </div>
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-upload me-2"></i>Upload Design
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+    <div class="container">
+        <h1 class="text-center mt-5">Transform Your Videos in Seconds</h1>
+        <p class="text-center text-secondary">Easily upload a shirt design, upload a video of yourself, pick your favorite shirt design, and download a personalized, processed video of your virtual try-on on clothes.</p>
+
+
+
+
+
+
+
+        <div class="card shadow mt-4 p-4">
+            <h3 class="text-center mb-4">Upload a New Shirt</h3>
+            <form action="/upload_shirt" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="shirt_image" class="form-label">Choose a Shirt Image</label>
+                    <input type="file" class="form-control" name="shirt_image" id="shirt_image" required>
                 </div>
-            </div>
-
-            <!-- Try-On Card -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-video me-2"></i>Virtual Try-On
-                    </div>
-                    <div class="card-body">
-                        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
-                            <div class="mb-4">
-                                <label for="file" class="form-label">Upload Your Video</label>
-                                <div class="file-upload-area">
-                                    <i class="fas fa-video"></i>
-                                    <h4>Drag & drop your video here</h4>
-                                    <p>or click to browse</p>
-                                    <input type="file" name="file" accept="video/*" required>
-                                </div>
-                                <div class="file-input-container mt-3">
-                                    <div class="custom-file-button">
-                                        <i class="fas fa-file-video me-2"></i>Choose a Video
-                                    </div>
-                                    <input type="file" name="file" accept="video/*" required>
-                                </div>
-                            </div>
-
-                            <div class="design-header mt-4">
-                                <h4>Select a Design</h4>
-                                <p>Choose from your uploaded designs below:</p>
-                            </div>
-                            
-                            <div class="shirt-selection">
-                                <!-- Sample shirts - these would be dynamically generated from your backend -->
-                                <div class="shirt-item">
-                                    <img src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                                <div class="shirt-item selected">
-                                    <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                                <div class="shirt-item">
-                                    <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                                <div class="shirt-item">
-                                    <img src="https://images.unsplash.com/photo-1562157873-818bc0726f68?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                                <div class="shirt-item">
-                                    <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                                <div class="shirt-item">
-                                    <img src="https://images.unsplash.com/photo-1617137968427-85924c800a22?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Shirt Design">
-                                    <div class="overlay">
-                                        <i class="fas fa-check fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <input type="hidden" name="shirt_index" value="1">
-
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg w-100 py-3">
-                                    <i class="fas fa-magic me-2"></i>Create Virtual Try-On
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">Upload Shirt</button>
                 </div>
-            </div>
+            </form>
         </div>
 
-        <!-- Processing Section -->
-        <div class="processing-section" id="processingSection" style="display: none;">
-            <div class="spinner-border text-primary mb-3" role="status"></div>
-            <h3 class="mb-2">Creating Your Virtual Try-On</h3>
-            <p class="text-muted">This usually takes about 30-60 seconds. Please don't close this page.</p>
-            <div class="progress mt-4" style="height: 8px; max-width: 500px; margin: 0 auto;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 45%;"></div>
-            </div>
+
+        <div class="card shadow mt-4 p-4">
+
+
+            <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="file" class="form-label">Choose a Video to Upload</label>
+                    <input type="file" class="form-control" name="file" accept="video/*" required>
+                </div>
+
+                <h3 class="mt-4">Select a Shirt</h3>
+                <div class="row shirt-selection">
+                    {% for shirt in shirts %}
+                    <div class="col-6 col-md-4 col-lg-3 text-center mt-3">
+                        <label>
+                            <input type="radio" name="shirt_index" value="{{ loop.index0 }}" {% if loop.index0 == 0 %}checked{% endif %} hidden>
+                            <img src="/Resources/Shirts/{{ shirt }}" alt="{{ shirt }}" class="img-fluid shirt-image {% if loop.index0 == 0 %}selected{% endif %}">
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Upload and Process</button>
+                </div>
+            </form>
         </div>
 
-        <!-- Result Section -->
-        <div class="notification-card mt-5" id="resultSection" style="display: none;">
-            <div class="mb-3">
-                <i class="fas fa-check-circle fa-3x"></i>
+        <!-- Processing Message -->
+        <div id="processingMessage" class="processing-message mt-4">
+            <div class="d-flex justify-content-center">
+                <div class="spinner-border text-primary" role="status"></div>
             </div>
-            <h3 class="mb-3">Your Virtual Try-On is Ready!</h3>
-            <p class="mb-4">Successfully processed your video with the selected design.</p>
-            <a href="#" class="btn btn-success btn-lg px-5">
-                <i class="fas fa-download me-2"></i>Download Video
-            </a>
+            <p>Processing your video, please wait...</p>
         </div>
-    </main>
+
+        <!-- Notification and Download Link -->
+        <div id="notification" class="notification text-center mt-4" style="display: none;"></div>
+        <div id="downloadLink" class="download-link text-center" style="display: none;"></div>
+    </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 mb-4 mb-md-0">
-                    <h5>About VirtualFit</h5>
-                    <p>VirtualFit uses cutting-edge AI technology to revolutionize the way you shop for clothes. Try before you buy with our realistic virtual try-on experience.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <h5>Connect With Us</h5>
-                    <div class="social-links mt-3">
-                        <a href="https://www.instagram.com/jt__boi/" target="_blank"><i class="fab fa-instagram"></i></a>
-                        <a href="mailto:johnnietse994@gmail.com"><i class="fas fa-envelope"></i></a>
-                        <a href="https://www.linkedin.com/in/johnnie-tse/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="https://github.com/johnnietse/cloth-virtual-try-on.git" target="_blank"><i class="fab fa-github"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 VirtualFit. All rights reserved. Crafted with <i class="fas fa-heart text-danger"></i> by Johnnie Tse</p>
-            </div>
+    <footer>
+        <p>&copy; 2025 Virtual Try-On. All rights reserved.</p>
+        <div>
+            <a href="https://www.instagram.com/jt__boi/"><i class="fab fa-instagram"></i></a>
+            <a href="mailto:johnnietse994@gmail.com?subject=Mail from our Website"><i class="fab fa fa-envelope"></i></a>
+            <a href="https://www.linkedin.com/in/johnnie-tse/"><i class="fab fa-linkedin"></i></a>
+            <a href="https://github.com/johnnietse/cloth-virtual-try-on.git"><i class="fab fa-github"></i></a>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
+    <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <!-- Custom JavaScript -->
     <script>
-        // Theme switcher functionality
-        const themeSwitcher = document.getElementById('themeSwitcher');
-        const body = document.body;
-        
-        // Initialize theme
-        const currentTheme = localStorage.getItem('theme') || 'dark';
-        body.classList.add(currentTheme);
-        if (currentTheme === 'light') {
-            body.classList.add('light');
-        } else {
-            body.classList.add('dark');
-        }
-        updateThemeIcon();
-        
-        function updateThemeIcon() {
-            if (body.classList.contains('light')) {
-                themeSwitcher.innerHTML = '<i class="fas fa-sun"></i>';
-            } else {
-                themeSwitcher.innerHTML = '<i class="fas fa-moon"></i>';
-            }
-        }
-        
-        themeSwitcher.addEventListener('click', () => {
-            if (body.classList.contains('light')) {
-                body.classList.remove('light');
-                body.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                body.classList.remove('dark');
-                body.classList.add('light');
-                localStorage.setItem('theme', 'light');
-            }
-            updateThemeIcon();
-        });
-        
-        // Shirt selection functionality
-        const shirtItems = document.querySelectorAll('.shirt-item');
-        shirtItems.forEach(item => {
-            item.addEventListener('click', () => {
-                shirtItems.forEach(i => i.classList.remove('selected'));
-                item.classList.add('selected');
-            });
-        });
-        
-        // Form submission simulation
         const uploadForm = document.getElementById('uploadForm');
-        const processingSection = document.getElementById('processingSection');
-        const resultSection = document.getElementById('resultSection');
-        
-        uploadForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            // Show processing section
-            processingSection.style.display = 'block';
-            
-            // Scroll to processing section
-            processingSection.scrollIntoView({ behavior: 'smooth' });
-            
-            // Simulate processing time
-            setTimeout(() => {
-                processingSection.style.display = 'none';
-                resultSection.style.display = 'block';
-                resultSection.scrollIntoView({ behavior: 'smooth' });
-            }, 4000);
+        const notification = document.getElementById('notification');
+        const downloadLink = document.getElementById('downloadLink');
+        const processingMessage = document.getElementById('processingMessage');
+        const shirtImages = document.querySelectorAll('.shirt-image');
+        const shirtRadios = document.querySelectorAll('input[name="shirt_index"]');
+
+        // Handle shirt selection
+        shirtImages.forEach((img, index) => {
+            img.addEventListener('click', () => {
+                shirtImages.forEach(image => image.classList.remove('selected'));
+                img.classList.add('selected');
+                shirtRadios[index].checked = true;
+            });
         });
 
-        // File upload feedback
-        const fileUploadAreas = document.querySelectorAll('.file-upload-area');
-        fileUploadAreas.forEach(area => {
-            const input = area.querySelector('input[type="file"]');
-            
-            input.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    area.style.borderColor = '#10b981';
-                    area.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+        // Handle form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            notification.style.display = 'none';
+            downloadLink.style.display = 'none';
+            processingMessage.style.display = 'block';
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    processingMessage.style.display = 'none';
+                    notification.style.display = 'block';
+                    notification.textContent = result.message;
+
+                    downloadLink.style.display = 'block';
+                    downloadLink.innerHTML = `<a href="${result.download_url}" class="btn btn-success btn-lg" download>Download Processed Video</a>`;
+                } else {
+                    processingMessage.style.display = 'none';
+                    alert(result.error || 'An error occurred during upload.');
                 }
-            });
-            
-            area.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                area.style.borderColor = '#6a5af9';
-                area.style.backgroundColor = 'rgba(106, 90, 249, 0.15)';
-            });
-            
-            area.addEventListener('dragleave', () => {
-                area.style.borderColor = '';
-                area.style.backgroundColor = '';
-            });
-            
-            area.addEventListener('drop', (e) => {
-                e.preventDefault();
-                area.style.borderColor = '#10b981';
-                area.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
-                input.files = e.dataTransfer.files;
-            });
+            } catch (error) {
+                processingMessage.style.display = 'none';
+                alert('An error occurred: ' + error.message);
+            }
         });
     </script>
+
+
+    <script>
+        const themeSwitcher = document.getElementById("themeSwitcher");
+        const body = document.body;
+        const uploadNewShirtText = document.querySelector("h3.text-center.mb-4");
+        const selectAShirtText = document.querySelector("h3.mt-4");
+
+
+
+        // Default theme based on user preference or set to dark
+        const currentTheme = localStorage.getItem("theme") || "dark";
+        body.classList.add(currentTheme);
+
+        // Update icon based on current theme
+        const updateIcon = () => {
+            if (body.classList.contains("dark")) {
+                themeSwitcher.innerHTML = '<i class="fas fa-moon"></i>';
+                uploadNewShirtText.style.color = "#ffffff"; // White text for dark theme
+                selectAShirtText.style.color = "#ffffff"; // White text for dark theme
+
+
+            } else {
+                themeSwitcher.innerHTML = '<i class="fas fa-sun"></i>';
+                uploadNewShirtText.style.color = "#121212"; // Dark text for light theme
+                selectAShirtText.style.color = "#121212"; // Dark text for light theme
+
+            }
+        };
+
+        updateIcon();
+
+        // Theme toggle functionality
+        themeSwitcher.addEventListener("click", () => {
+            if (body.classList.contains("dark")) {
+                body.classList.replace("dark", "light");
+                localStorage.setItem("theme", "light");
+            } else {
+                body.classList.replace("light", "dark");
+                localStorage.setItem("theme", "dark");
+            }
+            updateIcon();
+        });
+    </script>
+
+
+
+
 </body>
 </html>
+
